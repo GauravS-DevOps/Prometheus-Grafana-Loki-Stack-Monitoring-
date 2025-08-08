@@ -1,0 +1,42 @@
+                 ┌────────────────────────────┐
+                 │        Kubernetes           │
+                 │  (Village Houses/Services)  │
+                 └───────────┬────────────────┘
+                             │
+                [Metrics Path]                   [Logs Path]
+                             │                                      
+                 ┌───────────▼───────────┐         ┌───────────▼───────────┐
+                 │      Exporters        │         │       Promtail        │
+                 │ (Node, MySQL, etc.)   │         │ (Log Collector +      │
+                 │ Expose /metrics       │         │  Label Adder)         │
+                 └───────────┬───────────┘         └───────────┬───────────┘
+                             │                                 │
+                             ▼                                 ▼
+                 ┌────────────────────────────┐     ┌──────────────────────────┐
+                 │        Prometheus           │     │          Loki            │
+                 │- Scrapes exporters (/metrics)│    │- Stores logs in chunks   │
+                 │- Stores TSDB (15 days)      │     │- Indexes labels only     │
+                 └───────┬─────────┬──────────┘     └───────────┬──────────────┘
+                         │         │                            │
+                         │         │                            │
+          ┌──────────────▼─┐   ┌───▼───────────────┐            │
+          │ Pushgateway     │   │   Alertmanager    │            │
+          │ Short-lived job │   │ Routes, groups,   │            │
+          │ metrics store   │   │ deduplicates      │            │
+          └────────────────┘   └───┬───────────────┘            │
+                                    │                            │
+                    ┌───────────────▼────────────────┐          │
+                    │            Grafana              │<────────┘
+                    │ - Queries Prometheus (metrics)  │
+                    │ - Queries Loki (logs)           │
+                    │ - Correlates metrics & logs     │
+                    │ - Visualizes dashboards         │
+                    └─────────────────────────────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │      Thanos/Cortex    │
+                         │ - Ship old metrics to │
+                         │   S3 / long-term store│
+                         │ - Merge old + new     │
+                         └──────────────────────┘
